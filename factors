@@ -1,39 +1,48 @@
 #!/usr/bin/env bash
 
-factorize() {
-    local num=$1
-    local divisor=2
-
-    while ((num > 1)); do
-        if ((num % divisor == 0)); then
-            echo "$num=$divisor*$(($num / $divisor))"
-            return
+check_factor()
+{
+	if [ $# -ne 3 ];
+        then
+                args=("$@")
+                count=0
+                num2=1
+                for a in ${args[*]};
+                do
+                        if [ $count -gt 1 ];
+                        then
+                                num2=$(echo $a*$num2 | bc)
+                        fi
+                        count=$((count + 1))
+                done
+        else
+                num2=$3
         fi
-        ((divisor++))
-    done
+
+        num1=$2
+        num=$(echo "$1" | tr ':' '=')
+
+        result=$(echo "if($num2 > $num1) 1 else 0" | bc)
+	        if ((result == 1)); then
+		        numcp=$num1
+		        num1=$num2
+		        num2=$numcp
+                fi
+
+        echo "$num$num1*$num2"
 }
 
-if [ $# -ne 1 ]; then
-    echo 'Usage: factors <file>'
-    exit 1
+if [ $# -ne 1 ]
+then
+        echo 'Usage: factors <file>'
+        exit 1
+else
+
+        while read i
+        do
+
+                result=$(factor "$i")
+                check_factor $result
+
+        done < "$1"
 fi
-
-if [ ! -f "$1" ]; then
-    echo "File '$1' not found"
-    exit 1
-fi
-
-while IFS= read -r line || [ -n "$line" ]; do
-    re='^[0-9]+$'
-    if ! [[ $line =~ $re ]]; then
-        echo "Invalid input: '$line'"
-        continue
-    fi
-
-    if ((line <= 1)); then
-        echo "Number should be greater than 1: '$line'"
-        continue
-    fi
-
-    factorize "$line"
-done < "$1"
